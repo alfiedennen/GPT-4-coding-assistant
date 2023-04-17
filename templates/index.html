@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPT-4 Coding Assistant</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      #chat-area p {
+        word-wrap: break-word;
+      }
+
+      #chat-area .embeddings-referenced {
+        background-color: #e4f0f5;
+        color: black;
+        border: 2px solid #57c1cd;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+      }
+
+      h1 {
+        text-align: center;
+        background-color: #f1f1f1;
+        padding: 15px;
+        margin: 0;
+      }
+
+      #chat-area {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #e9ecef;
+      }
+
+      #chat-area p {
+        margin: 6px 0;
+        padding: 8px;
+        border-radius: 4px;
+        max-width: 70%;
+        clear: both;
+      }
+
+      #chat-area .embeddings-referenced {
+        background-color: #e4f0f5;
+        color: black;
+        border: 2px solid #57c1cd;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+
+      #chat-area p:last-child {
+        margin-bottom: 40px;
+      }
+
+      #chat-area p:nth-child(odd) {
+        background-color: #57c1cd;
+        color: white;
+        float: left;
+      }
+
+      #chat-area p:nth-child(even) {
+        background-color: #e4f0f5;
+        float: right;
+      }
+
+      #message-form {
+        display: flex;
+        background-color: #f1f1f1;
+        padding: 10px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+
+      #message {
+        flex-grow: 1;
+        border: none;
+        border-radius: 2px;
+        padding: 5px;
+      }
+
+      #message:focus {
+        outline: none;
+      }
+
+      #message-form button {
+        background-color: #57c1cd;
+        color: white;
+        border: none;
+        border-radius: 2px;
+        padding: 5px 15px;
+        margin-left: 5px;
+      }
+
+      #message-form button:hover {
+        background-color: #44a9ba;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>GPT-4 Coding Assistant</h1>
+    <span
+      id="token-counter"
+      style="position: fixed; top: 10px; right: 20px; font-weight: bold"
+    ></span>
+    <div id="chat-area"></div>
+    <p id="token-usage" style="text-align: center; font-weight: bold"></p>
+    <form id="message-form">
+      <!-- Replace the input element with a textarea element -->
+      <textarea
+        id="message"
+        placeholder="Type your message..."
+        rows="3"
+      ></textarea>
+      <button type="submit">Send</button>
+      <input type="checkbox" id="embeddings-lookup" checked />
+      <label for="embeddings-lookup" style="font-size: 16px"
+        >Enable embeddings lookup</label
+      >
+    </form>
+
+    <script>
+        function escapeHtml(unsafe) {
+          return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        }
+  
+        function addMessageToChat(sender, message) {
+          // The rest of the addMessageToChat function remains unchanged
+        }
+  
+        var tokenConsumption = 0;
+  
+        function updateTokenCounter() {
+          // The rest of the updateTokenCounter function remains unchanged
+        }
+  
+        $("#message-form").submit(function (event) {
+          event.preventDefault();
+          var message = $("#message").val().trim();
+          var embeddings_lookup = $("#embeddings-lookup").is(":checked")
+            ? "true"
+            : "false";
+  
+          if (message.length > 0) {
+            addMessageToChat("me", message);
+  
+            // Send the message and embeddings_lookup flag to the server via AJAX
+            $.ajax({
+              url: "/user_message",
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({
+                message: message,
+                embeddings_lookup: embeddings_lookup,
+              }),
+              success: function (data) {
+                // Display the GPT-4 response in the chat area
+                addMessageToChat("gpt", data.response);
+                if (data.embeddings_referenced) {
+                  addEmbeddingsReferencedToChat(data.embeddings_referenced);
+                }
+  
+                // Display the content of the most similar files
+                if (data.most_similar_file_contents) {
+                  for (let i = 0; i < data.most_similar_file_contents.length; i++) {
+                    addMessageToChat("gpt", data.most_similar_file_contents[i]);
+                  }
+                }
+  
+                tokenConsumption = data.token_usage;
+                updateTokenCounter();
+              },
+              error: function (error) {
+                console.error("Error:", error);
+              },
+            });
+          }
+  
+          $("#message").val("");
+        });
+  
+        function addEmbeddingsReferencedToChat(embeddings) {
+          // The rest of the addEmbeddingsReferencedToChat function remains unchanged
+        }
+  
+        $("#message").val("");
+        $(document).ready(function () {
+          updateTokenCounter();
+        });
+      </script>
+    </body>
+  </html>
