@@ -131,78 +131,89 @@
     </form>
 
     <script>
-        function escapeHtml(unsafe) {
-          return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-        }
-  
-        function addMessageToChat(sender, message) {
-          // The rest of the addMessageToChat function remains unchanged
-        }
-  
-        var tokenConsumption = 0;
-  
-        function updateTokenCounter() {
-          // The rest of the updateTokenCounter function remains unchanged
-        }
-  
-        $("#message-form").submit(function (event) {
-          event.preventDefault();
-          var message = $("#message").val().trim();
-          var embeddings_lookup = $("#embeddings-lookup").is(":checked")
-            ? "true"
-            : "false";
-  
-          if (message.length > 0) {
-            addMessageToChat("me", message);
-  
-            // Send the message and embeddings_lookup flag to the server via AJAX
-            $.ajax({
-              url: "/user_message",
-              method: "POST",
-              contentType: "application/json",
-              data: JSON.stringify({
-                message: message,
-                embeddings_lookup: embeddings_lookup,
-              }),
-              success: function (data) {
-                // Display the GPT-4 response in the chat area
-                addMessageToChat("gpt", data.response);
-                if (data.embeddings_referenced) {
-                  addEmbeddingsReferencedToChat(data.embeddings_referenced);
+      function escapeHtml(unsafe) {
+        return unsafe
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function addMessageToChat(sender, message) {
+        var senderClass = sender === "me" ? "user-message" : "gpt-message";
+        var escapedMessage = escapeHtml(message);
+        var messageElement = `<p class="${senderClass}">${escapedMessage}</p>`;
+        $("#chat-area").append(messageElement);
+        $("#chat-area").scrollTop($("#chat-area")[0].scrollHeight);
+      }
+
+      function addEmbeddingsReferencedToChat(embeddings) {
+        var escapedEmbeddings = escapeHtml(embeddings);
+        var embeddingsElement = `<p class="embeddings-referenced">${escapedEmbeddings}</p>`;
+        $("#chat-area").append(embeddingsElement);
+        $("#chat-area").scrollTop($("#chat-area")[0].scrollHeight);
+      }
+
+      var tokenConsumption = 0;
+
+      function updateTokenCounter() {
+        // The rest of the updateTokenCounter function remains unchanged
+      }
+
+      $("#message-form").submit(function (event) {
+        event.preventDefault();
+        var message = $("#message").val().trim();
+        var embeddings_lookup = $("#embeddings-lookup").is(":checked")
+          ? "true"
+          : "false";
+
+        if (message.length > 0) {
+          addMessageToChat("me", message);
+
+          // Send the message and embeddings_lookup flag to the server via AJAX
+          $.ajax({
+            url: "/user_message",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+              message: message,
+              embeddings_lookup: embeddings_lookup,
+            }),
+            success: function (data) {
+              // Display the GPT-4 response in the chat area
+              addMessageToChat("gpt", data.response);
+              if (data.embeddings_referenced) {
+                addEmbeddingsReferencedToChat(data.embeddings_referenced);
+              }
+
+              // Display the content of the most similar files
+              if (data.most_similar_file_contents) {
+                for (
+                  let i = 0;
+                  i < data.most_similar_file_contents.length;
+                  i++
+                ) {
+                  addMessageToChat("gpt", data.most_similar_file_contents[i]);
                 }
-  
-                // Display the content of the most similar files
-                if (data.most_similar_file_contents) {
-                  for (let i = 0; i < data.most_similar_file_contents.length; i++) {
-                    addMessageToChat("gpt", data.most_similar_file_contents[i]);
-                  }
-                }
-  
-                tokenConsumption = data.token_usage;
-                updateTokenCounter();
-              },
-              error: function (error) {
-                console.error("Error:", error);
-              },
-            });
-          }
-  
-          $("#message").val("");
-        });
-  
-        function addEmbeddingsReferencedToChat(embeddings) {
-          // The rest of the addEmbeddingsReferencedToChat function remains unchanged
+              }
+
+              tokenConsumption = data.token_usage;
+              updateTokenCounter();
+            },
+            error: function (error) {
+              console.error("Error:", error);
+            },
+          });
         }
-  
+
         $("#message").val("");
-        $(document).ready(function () {
-          updateTokenCounter();
-        });
-      </script>
-    </body>
-  </html>
+      });
+
+      $("#message").val("");
+      $(document).ready(function () {
+        updateTokenCounter();
+      });
+    </script>
+  </body>
+</html>
