@@ -25,7 +25,13 @@ def find_most_similar_files(annoy_index, index_map, user_input_embeddings, top_n
         print(f"KeyError: {e}")
         return []
 
-openai.api_key = "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"
+def get_api_key_from_file(filename):
+    with open(filename, 'r') as f:
+        api_key = f.read().strip()
+    return api_key
+
+openai.api_key = get_api_key_from_file('openaikey.txt')
+
 
 def interact_with_gpt(app, annoy_index, index_map, user_input, conversation_history, embeddings_lookup_enabled):
     context = ""
@@ -78,21 +84,27 @@ def interact_with_gpt(app, annoy_index, index_map, user_input, conversation_hist
                     
     response_data = response.json()
 
+    print("Conversation history:", conversation_history)
+    print("Response data:", response_data)
+
     if response_data.get("choices") and response_data["choices"][0].get("message"):
-        if response_data["choices"][0]["message"]["role"] == "assistant":
-            assistant_response = response_data["choices"][0]["message"]["content"].strip()
-            conversation_history.append({"role": "assistant", "content": assistant_response})
+        assistant_response = response_data["choices"][0]["message"]["content"].strip()
+        conversation_history.append({"role": "assistant", "content": assistant_response})
 
-            # Add the content of the most similar files to the response dictionary
-            most_similar_file_contents = []
-            for file_path in most_similar_files:
-                with open(file_path, 'r') as f:
-                    file_content = f.read()
-                    most_similar_file_contents.append(file_content)
+        # Add the content of the most similar files to the response dictionary
+        most_similar_file_contents = []
+        for file_path in most_similar_files:
+            with open(file_path, 'r') as f:
+                file_content = f.read()
+                most_similar_file_contents.append(file_content)
 
-            result = {"response": assistant_response, "token_usage": token_usage, "most_similar_files": most_similar_files, "most_similar_file_contents": most_similar_file_contents}
-            return result
-                
+                print("Assistant response:", assistant_response)  # Debug print
+                result = {"response": assistant_response, "token_usage": token_usage, "most_similar_files": most_similar_files, "most_similar_file_contents": most_similar_file_contents}
+                return result
+
+        result = {"response": assistant_response, "token_usage": token_usage, "most_similar_files": most_similar_files, "most_similar_file_contents": most_similar_file_contents}
+        return result     
+               
 with open('embeddings.json', 'r') as f:
     embeddings_dict = json.load(f)
 
